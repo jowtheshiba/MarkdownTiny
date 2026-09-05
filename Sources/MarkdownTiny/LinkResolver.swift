@@ -4,14 +4,36 @@ struct LinkResolver {
     let currentFileURL: URL
 
     func resolve(_ target: String) -> URL? {
-        if target.hasPrefix("http://") || target.hasPrefix("https://") {
-            return URL(string: target)
+        let trimmed = target.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
+            return URL(string: trimmed)
         }
 
+        // Strip #anchor and ?query for local file lookup.
+        var pathPart = trimmed
+        if let hash = pathPart.firstIndex(of: "#") {
+            pathPart = String(pathPart[..<hash])
+        }
+        if let q = pathPart.firstIndex(of: "?") {
+            pathPart = String(pathPart[..<q])
+        }
+        pathPart = pathPart.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !pathPart.isEmpty else { return nil }
+
         let currentDir = currentFileURL.deletingLastPathComponent()
-        let resolved = currentDir.appendingPathComponent(target).standardized
+        let resolved = currentDir.appendingPathComponent(pathPart).standardized
         if FileManager.default.fileExists(atPath: resolved.path) {
             return resolved
+        }
+        // Case-insensitive fallback (INDEX.md vs index.md on Linux).
+        if let files = try? FileManager.default.contentsOfDirectory(atPath: currentDir.path) {
+            let lower = resolved.lastPathComponent.lowercased()
+            if let match = files.first(where: { $0.lowercased() == lower }) {
+                let candidate = currentDir.appendingPathComponent(match)
+                if FileManager.default.fileExists(atPath: candidate.path) {
+                    return candidate
+                }
+            }
         }
         return nil
     }

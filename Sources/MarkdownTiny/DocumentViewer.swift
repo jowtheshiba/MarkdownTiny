@@ -316,7 +316,7 @@ final class DocumentViewer {
                 }
 
                 if !spacePrefix.isEmpty && (currentWidth > 0 || isFirstVisualLine) {
-                    currentLine.append(StyledSegment(spacePrefix, foregroundColor: segment.foregroundColor))
+                    currentLine.append(StyledSegment(spacePrefix, attributes: segment.attributes, foregroundColor: segment.foregroundColor, backgroundColor: segment.backgroundColor, linkTarget: segment.linkTarget))
                     currentWidth += 1
                 }
 

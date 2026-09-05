@@ -412,7 +412,9 @@ struct MarkdownParser {
             let plain = stripMarkdown(cell)
             let padAmount = max(0, colWidths[i] - plain.count)
             for seg in segs {
-                headerLine.append(StyledSegment(seg.text, attributes: seg.attributes.union([.bold]), foregroundColor: .brightYellow, backgroundColor: seg.backgroundColor))
+                // Preserve links: keep link color, just add bold.
+                let fg: Color = seg.linkTarget != nil ? seg.foregroundColor : .brightYellow
+                headerLine.append(StyledSegment(seg.text, attributes: seg.attributes.union([.bold]), foregroundColor: fg, backgroundColor: seg.backgroundColor, linkTarget: seg.linkTarget))
             }
             if padAmount > 0 {
                 headerLine.append(StyledSegment(String(repeating: " ", count: padAmount), foregroundColor: .brightYellow))
@@ -439,7 +441,7 @@ struct MarkdownParser {
                 let plain = stripMarkdown(cell)
                 let padAmount = max(0, w - plain.count)
                 for seg in segs {
-                    dataLine.append(StyledSegment(seg.text, foregroundColor: seg.foregroundColor, backgroundColor: seg.backgroundColor))
+                    dataLine.append(StyledSegment(seg.text, attributes: seg.attributes, foregroundColor: seg.foregroundColor, backgroundColor: seg.backgroundColor, linkTarget: seg.linkTarget))
                 }
                 if padAmount > 0 {
                     dataLine.append(StyledSegment(String(repeating: " ", count: padAmount), foregroundColor: .white))
