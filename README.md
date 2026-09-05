@@ -2,7 +2,16 @@
 
 A minimal terminal Markdown viewer built with Swift and SwiftyTermUI.
 
+## Installation
+
+To install `markdowntiny` on macOS or Linux, you can use the following command (ensure `swift` is installed):
+
+```bash
+curl -sSL https://raw.githubusercontent.com/anomalyco/MarkdownTiny/main/install.sh | bash
+```
+
 ## Run
+
 
 ```bash
 swift run MarkdownTiny test_md_files/overview.md
