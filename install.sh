@@ -8,13 +8,26 @@ if ! command -v swift &> /dev/null; then
     exit 1
 fi
 
-echo "Swift found. Starting build..."
+# Create a temporary directory for cloning and building
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
+echo "Swift found. Cloning repository into $TEMP_DIR..."
+
+# Clone the repository
+# We use the current script's URL if possible, but here we'll use a reliable source
+# Since this is for your repo:
+REPO_URL="https://github.com/jowtheshiba/MarkdownTiny.git"
+git clone "$REPO_URL" "$TEMP_DIR"
+
+cd "$TEMP_DIR"
+
+echo "Starting build..."
 
 # Build the project in release mode
 swift build -c release
 
 # Find the binary
-# We can use swift build --show-bin-path to get the path to the build artifacts directory
 BIN_DIR=$(swift build --show-bin-path)
 BINARY_NAME="MarkdownTiny"
 SOURCE_PATH="$BIN_DIR/$BINARY_NAME"
