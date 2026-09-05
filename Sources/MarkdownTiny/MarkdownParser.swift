@@ -49,12 +49,37 @@ struct MarkdownParser {
         var inCodeBlock = false
         var codeLang = ""
         var codeBuffer: [String] = []
+        var codeFenceIndent = 0
         var tableBuffer: [String] = []
         var lastListDepth: Int? = nil
         var previousRawWasBlank = true
 
+        func fenceInfo(_ line: String) -> (indent: Int, info: String)? {
+            var indent = 0
+            var idx = line.startIndex
+            while idx < line.endIndex && (line[idx] == " " || line[idx] == "\t") {
+                indent += 1
+                idx = line.index(after: idx)
+            }
+            let rest = String(line[idx...])
+            guard rest.hasPrefix("```") else { return nil }
+            let info = String(rest.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+            return (indent, info)
+        }
+
+        func stripFenceIndent(_ line: String, indent: Int) -> String {
+            guard indent > 0, !line.isEmpty else { return line }
+            var idx = line.startIndex
+            var removed = 0
+            while idx < line.endIndex && removed < indent && (line[idx] == " " || line[idx] == "\t") {
+                idx = line.index(after: idx)
+                removed += 1
+            }
+            return String(line[idx...])
+        }
+
         func flushCode() {
-            if inCodeBlock && !codeBuffer.isEmpty {
+            if inCodeBlock {
                 result.append(contentsOf: renderCodeBlock(codeLang, lines: codeBuffer))
             }
             codeBuffer.removeAll()
@@ -70,15 +95,17 @@ struct MarkdownParser {
         for (lineIndex, rawLine) in rawLines.enumerated() {
             let rawIsBlank = rawLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
-            if rawLine.hasPrefix("```") {
+            if let fence = fenceInfo(rawLine) {
                 flushTable()
                 if inCodeBlock {
                     flushCode()
                     inCodeBlock = false
                     codeLang = ""
+                    codeFenceIndent = 0
                 } else {
                     inCodeBlock = true
-                    codeLang = String(rawLine.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                    codeLang = fence.info
+                    codeFenceIndent = fence.indent
                 }
                 previousRawWasBlank = false
                 lastListDepth = nil
@@ -86,7 +113,7 @@ struct MarkdownParser {
             }
 
             if inCodeBlock {
-                codeBuffer.append(rawLine)
+                codeBuffer.append(stripFenceIndent(rawLine, indent: codeFenceIndent))
                 previousRawWasBlank = false
                 lastListDepth = nil
                 continue
